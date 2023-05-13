@@ -1,2 +1,20 @@
-# expense-tracker-app
-An application for daily expense tracking - Project for ITSchool
+# Expense Tracker 
+
+## Setting up the virtual environment
+
+```
+> python -m venv .venv
+```
+
+## Activating the virtual environment
+
+### On Windows
+```
+> .venv\Scripts\activate
+```
+
+## Deactivating the virtual environment
+
+```
+> deactivate
+```
