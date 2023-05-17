@@ -46,4 +46,62 @@ class DatabaseManager:
         statement = f"DROP TABLE {table_name};"
         self.cursor.execute(statement)
 
-       
+    def add(self, table_name: str, data: dict):
+        """
+        Takes in a table name and INSERT data INTO and a data dictionary with columns
+        as keys and values as values
+        """
+        column_names = ", ".join(data.keys())
+        placeholders = ", ".join(["?"] * len(data.keys()))
+        column_values = tuple(data.values())
+
+        statement = f"""
+            INSERT INTO
+                {table_name} (
+                    {column_names}
+                ) VALUES (
+                    {placeholders}
+                );
+        """
+        self.cursor.execute(statement, column_values)
+        self.connection.commit()
+
+    def delete_entry(self, table_name: str, criteria: dict):
+        """ 
+        Takes in a table name and a criteria dictionary where the keys are the 
+        column names and the values are the values to be matched. The method 
+        constructs a DELETE statement using placeholders (?) for the values
+        """
+        statement = f"DELETE FROM {table_name} WHERE "
+        statement += " AND ".join([f"{column} = ?" for column in criteria.keys()])
+        values = tuple(criteria.values())
+                
+        self.cursor.execute(statement, values)
+        self.connection.commit()
+        
+    def select(self, table_name:str, criteria:dict={}, order_by:str=None, descending:bool=False):
+        """
+        Takes in a table name and optionally a criteria dictionary where the keys 
+        are the column names and the values are the values to be matched. The method 
+        constructs a SELECT query using placeholders (?) for the values.
+        If an order_by column is provided, the results are ordered by that column. 
+        If the descending flag is set to True, the results are ordered in descending order.
+        The method returns all rows fetched by the query.
+        """
+
+        statement = f"SELECT * FROM {table_name}"
+        values = ()
+        if criteria:
+            statement += " WHERE "
+            statement += " AND ".join([f"{key} = ?" for key in criteria.keys()])
+            values = tuple(criteria.values())
+
+        if order_by:
+            statement += f" ORDER BY {order_by}"
+            if descending:
+                statement += " DESC"
+                
+        statement += ";"
+        
+        return self.cursor.execute(statement, values)
+        
