@@ -10,8 +10,6 @@ class DatabaseManager:
         """ Initialize the connection with SQLite database """
  
         self.connection = sqlite3.connect(database_filename)
-        # created an att cursor that i will use after every command construction
-        # that executes it(instead of creating a separate method)
         self.cursor = self.connection.cursor()    
 
     def __del__(self):
@@ -48,7 +46,7 @@ class DatabaseManager:
 
     def add(self, table_name: str, data: dict):
         """
-        Takes in a table name and INSERT data INTO and a data dictionary with columns
+        Takes in a table name and INSERT data INTO, and a data dictionary with columns
         as keys and values as values
         """
         column_names = ", ".join(data.keys())
@@ -68,9 +66,7 @@ class DatabaseManager:
 
     def delete_entry(self, table_name: str, criteria: dict):
         """ 
-        Takes in a table name and a criteria dictionary where the keys are the 
-        column names and the values are the values to be matched. The method 
-        constructs a DELETE statement using placeholders (?) for the values
+        Takes in a table name and a criteria to DELETE FROM
         """
         statement = f"DELETE FROM {table_name} WHERE "
         statement += " AND ".join([f"{column} = ?" for column in criteria.keys()])
@@ -79,23 +75,34 @@ class DatabaseManager:
         self.cursor.execute(statement, values)
         self.connection.commit()
         
-    def select(self, table_name:str, criteria:dict={}, order_by:str=None, descending:bool=False):
+    def select(
+            self, table_name:str,  
+            criteria:dict=None, 
+            order_by=None, 
+            descending:bool=False,
+            comparison_operator:str=None
+            ):
         """
-        Takes in a table name and optionally a criteria dictionary where the keys 
-        are the column names and the values are the values to be matched. The method 
-        constructs a SELECT query using placeholders (?) for the values.
-        If an order_by column is provided, the results are ordered by that column. 
-        If the descending flag is set to True, the results are ordered in descending order.
-        The method returns all rows fetched by the query.
+        Takes in a table name and optionally a criteria as a dictionary, a column to order by
+        and a boolean flag to order it by that column descending or not
         """
 
         statement = f"SELECT * FROM {table_name}"
-        values = ()
+        values = []
         if criteria:
             statement += " WHERE "
-            statement += " AND ".join([f"{key} = ?" for key in criteria.keys()])
-            values = tuple(criteria.values())
-
+            conditions = []
+            for column, value in criteria.items():
+                if column == "between":
+                    conditions.append(f"{value[0]} BETWEEN ? AND ?")
+                    values.extend(value[1:])
+                elif column == "comparison_operator":
+                    conditions.append(f"price {value[0]}?")
+                    values.append(value[1])
+                else:
+                    conditions.append(f"{column} = ?")
+                    values.append(value)
+            statement += " AND ".join(conditions)
         if order_by:
             statement += f" ORDER BY {order_by}"
             if descending:
@@ -103,5 +110,21 @@ class DatabaseManager:
                 
         statement += ";"
         
-        return self.cursor.execute(statement, values)
-        
+        self.cursor.execute(statement, values)
+        return self.cursor.fetchall()
+     
+    def update(self, table_name:str, data:dict, criteria=None):
+        """
+         Takes in a table_name, a data dictionary containing the new values for 
+         the columns to be updated, and an optional criteria dictionary specifying 
+         the conditions for the rows to be updated.
+        """
+        columns = ', '.join([f"{k} = ?" for k in data.keys()])
+        values = list(data.values())
+        statement = f"UPDATE {table_name} SET {columns}"
+        if criteria:
+            statement += " WHERE " + " AND ".join([f"{column} = ?" for column in criteria.keys()])
+            values.extend(list(criteria.values()))
+
+        self.cursor.execute(statement, values)
+        self.connection.commit()
