@@ -80,7 +80,6 @@ class DatabaseManager:
             criteria:dict=None, 
             order_by=None, 
             descending:bool=False,
-            comparison_operator:str=None
             ):
         """
         Takes in a table name and optionally a criteria as a dictionary, a column to order by
@@ -97,7 +96,7 @@ class DatabaseManager:
                     conditions.append(f"{value[0]} BETWEEN ? AND ?")
                     values.extend(value[1:])
                 elif column == "comparison_operator":
-                    conditions.append(f"price {value[0]}?")
+                    conditions.append(f"price {value[0]} ?")
                     values.append(value[1])
                 else:
                     conditions.append(f"{column} = ?")

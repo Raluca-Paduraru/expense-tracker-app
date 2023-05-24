@@ -35,4 +35,4 @@ The project is divided into three layers:
 
 ## Usage
 
-The project is run from `expenses.py`. To use the application, simply run the script and follow the prompts.
+The project is run from `expense_tracker.py`. To use the application, simply run the script and follow the prompts.
